@@ -1,0 +1,13 @@
+{
+  "name": "리플렉션",
+  "short_name": "리플렉션",
+  "description": "아침·점심·저녁 하루를 세 번 회고하는 타임트래킹 앱",
+  "start_url": "https://insu0502.github.io/reflection-twa/index.html",
+  "scope": "https://insu0502.github.io/reflection-twa/",
+  "icons": [
+    { "src": "https://insu0502.github.io/reflection-twa/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "display": "standalone",
+  "theme_color": "#4A90D9",
+  "background_color": "#ffffff"
+}
