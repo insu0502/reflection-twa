@@ -1,0 +1,94 @@
+name: Build TWA APK/AAB
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+  workflow_dispatch:   
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 체크아웃
+        uses: actions/checkout@v4
+
+      - name: JDK 17 + Android SDK 설치
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 11076708
+
+      - name: JDK 17 설치
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Node.js 설치
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Keystore 디코딩 (GitHub Secrets → 파일)
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > www/release-keystore.jks
+          ls -la www/release-keystore.jks
+
+      - name: Bubblewrap CLI 전역 설치
+        run: |
+          npm install -g @bubblewrap/cli
+
+      - name: "@bubblewrap/core 로컬 설치"
+        run: |
+          npm install @bubblewrap/core
+
+      - name: Android 프로젝트 생성
+        run: |
+          node generate-project.js
+
+      - name: config.json 생성
+        run: |
+          cd www
+          echo "{\"jdkPath\": \"$JAVA_HOME\", \"androidSdkPath\": \"$ANDROID_HOME\"}" > config.json
+
+       - name: Bubblewrap 빌드
+        env:
+          BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.BUBBLEWRAP_KEYSTORE_PASSWORD }}
+          BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.BUBBLEWRAP_KEY_PASSWORD }}
+        run: |
+          cd www
+          echo "n" | bubblewrap build --config config.json --skipPwaValidation
+
+      - name: build-tools 경로 확인
+        run: |
+          echo "BUILD_TOOLS=$ANDROID_HOME/build-tools/34.0.0" >> $GITHUB_ENV
+
+      - name: APK 서명 (zipalign → apksigner v1+v2+v3)
+        env:
+          BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.BUBBLEWRAP_KEYSTORE_PASSWORD }}
+          BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.BUBBLEWRAP_KEY_PASSWORD }}
+        run: |
+          cd www
+          UNSIGNED_APK=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          $BUILD_TOOLS/zipalign -v -p 4 "$UNSIGNED_APK" aligned.apk
+          $BUILD_TOOLS/apksigner sign \
+            --ks release-keystore.jks \
+            --ks-pass "pass:$BUBBLEWRAP_KEYSTORE_PASSWORD" \
+            --key-pass "pass:$BUBBLEWRAP_KEY_PASSWORD" \
+            --out signed-release.apk \
+            aligned.apk
+          $BUILD_TOOLS/apksigner verify --verbose signed-release.apk
+          mkdir -p app/build/outputs/apk/signed
+          cp signed-release.apk app/build/outputs/apk/signed/
+
+      - name: 결과물 업로드 (아티팩트)
+        uses: actions/upload-artifact@v4
+        with:
+          name: twa-build-output
+          path: |
+            www/app/build/outputs/apk/signed/*.apk
+            www/app/build/outputs/bundle/release/*.aab
+          retention-days: 7
