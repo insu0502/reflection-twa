@@ -23,7 +23,7 @@
   "digitallySign": false,
   "signingKey": {
     "path": "release-keystore.jks",
-    "alias": "[REDACTED:SHARED_KEYSTORE_ALIAS]"
+    "alias": "real-app-key"
   },
   "enableNotifications": false,
   "enablePlayBilling": false,
