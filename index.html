@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>리플렉션</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4A90D9">
+  <style>
+    :root {
+      --morning: #4A90D9;
+      --lunch: #F5A623;
+      --evening: #8E44AD;
+      --bg: #ffffff;
+      --text: #1a1a1a;
+      --muted: #666;
+      --card: #f8f9fa;
+      --border: #e0e0e0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans KR', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 16px;
+    }
+    .app-header {
+      text-align: center;
+      padding: 24px 16px 16px;
+      background: linear-gradient(135deg, var(--morning), var(--lunch), var(--evening));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .app-header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .app-header p {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 4px;
+      -webkit-text-fill-color: var(--muted);
+      background: none;
+    }
+    .time-tabs {
+      display: flex;
+      gap: 8px;
+      margin: 16px 0;
+    }
+    .time-tab {
+      flex: 1;
+      padding: 12px 8px;
+      border: 2px solid transparent;
+      border-radius: 12px;
+      background: var(--card);
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .time-tab.active-m { border-color: var(--morning); background: #e8f0fe; color: var(--morning); }
+    .time-tab.active-l { border-color: var(--lunch); background: #fef3e2; color: var(--lunch); }
+    .time-tab.active-e { border-color: var(--evening); background: #f3e8f8; color: var(--evening); }
+    .time-tab .time-icon {
+      font-size: 20px;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .time-tab .time-label {
+      font-size: 13px;
+      opacity: 0.7;
+      font-weight: 400;
+    }
+    .section {
+      margin-top: 16px;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-title .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .dot-morning { background: var(--morning); }
+    .dot-lunch { background: var(--lunch); }
+    .dot-evening { background: var(--evening); }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .entry-item {
+      padding: 14px;
+      background: white;
+      border-radius: 10px;
+      border-left: 4px solid var(--morning);
+      margin-bottom: 8px;
+      position: relative;
+    }
+    .entry-item.lunch-entry { border-left-color: var(--lunch); }
+    .entry-item.evening-entry { border-left-color: var(--evening); }
+    .entry-time {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .entry-content {
+      font-size: 15px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .entry-delete {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: none;
+      border: none;
+      color: #ccc;
+      cursor: pointer;
+      font-size: 16px;
+      padding: 4px;
+    }
+    .entry-delete:hover { color: #e53e3e; }
+    .empty-state {
+      text-align: center;
+      padding: 24px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 15px;
+      font-family: inherit;
+      resize: vertical;
+      background: white;
+      color: var(--text);
+    }
+    textarea:focus {
+      outline: none;
+      border-color: var(--morning);
+      box-shadow: 0 0 0 3px rgba(74,144,217,0.1);
+    }
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn:active { opacity: 0.8; }
+    .btn-primary { background: var(--morning); color: white; }
+    .btn-lunch { background: var(--lunch); color: white; }
+    .btn-evening { background: var(--evening); color: white; }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
+    }
+    .stat-number {
+      font-size: 24px;
+      font-weight: 700;
+    }
+    .stat-label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .footer {
+      text-align: center;
+      padding: 24px 16px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <h1>리플렉션</h1>
+    <p>아침·점심·저녁, 하루를 세 번 돌아보는 시간</p>
+  </header>
+
+  <div class="time-tabs" id="timeTabs">
+    <div class="time-tab" data-period="morning">
+      <span class="time-icon">🌅</span>
+      아침
+      <span class="time-label">기상 ~ 오전</span>
+    </div>
+    <div class="time-tab" data-period="lunch">
+      <span class="time-icon">☀️</span>
+      점심
+      <span class="time-label">정오 ~ 오후</span>
+    </div>
+    <div class="time-tab" data-period="evening">
+      <span class="time-icon">🌙</span>
+      저녁
+      <span class="time-label">저녁 ~ 취침 전</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">
+      <span class="dot dot-morning" id="activeDot"></span>
+      <span id="activeTitle">아침 회고</span>
+    </div>
+    <textarea id="entryText" placeholder="오늘의 아침을 돌아보며 기록해보세요..."></textarea>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="saveBtn">저장</button>
+      <button class="btn" id="clearBtn" style="background:#eee; color:#555;">지우기</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">
+      <span class="dot" id="historyDot"></span>
+      <span id="historyTitle">아침 기록</span>
+    </div>
+    <div id="historyList"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">📊 이번 주 요약</div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-number" id="statMorning" style="color: var(--morning);">0</div>
+        <div class="stat-label">아침 기록</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="statLunch" style="color: var(--lunch);">0</div>
+        <div class="stat-label">점심 기록</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="statEvening" style="color: var(--evening);">0</div>
+        <div class="stat-label">저녁 기록</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title" style="margin-bottom:8px;">🗓️ 이번 주 전체</div>
+      <div id="weekList" style="max-height:200px; overflow-y:auto;"></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    리플렉션 · 하루가 모여 나를 만듭니다
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const STORAGE_KEY = 'com.geniustart.reflection_data';
+    const PERIODS = {
+      morning: { label: '아침', color: '#4A90D9', entryClass: '', dotClass: 'dot-morning' },
+      lunch:  { label: '점심', color: '#F5A623', entryClass: 'lunch-entry', dotClass: 'dot-lunch' },
+      evening:{ label: '저녁', color: '#8E44AD', entryClass: 'evening-entry', dotClass: 'dot-evening' }
+    };
+
+    let currentPeriod = 'morning';
+
+    // ---------- 데이터 ----------
+    function loadData() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return { entries: [], lastUpdate: null };
+        const data = JSON.parse(raw);
+        if (!data.entries) data.entries = [];
+        return data;
+      } catch (e) {
+        console.error('데이터 불러오기 실패:', e);
+        return { entries: [], lastUpdate: null };
+      }
+    }
+    function saveData(data) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      } catch (e) {
+        console.error('데이터 저장 실패:', e);
+        showToast('저장 중 오류가 발생했어요');
+      }
+    }
+
+    function getEntriesForPeriod(period) {
+      return loadData().entries.filter(e => e.period === period);
+    }
+
+    function getWeekEntries() {
+      const now = new Date();
+      const weekStart = new Date(now);
+      weekStart.setDate(now.getDate() - now.getDay()); // 일요일 기준
+      weekStart.setHours(0,0,0,0);
+      return loadData().entries.filter(e => {
+        const d = new Date(e.timestamp);
+        return d >= weekStart;
+      });
+    }
+
+    // ---------- 렌더링 ----------
+    function renderHistory() {
+      const list = document.getElementById('historyList');
+      const entries = getEntriesForPeriod(currentPeriod);
+      const info = PERIODS[currentPeriod];
+
+      document.getElementById('activeDot').className = 'dot ' + info.dotClass;
+      document.getElementById('activeTitle').textContent = info.label + ' 회고';
+      document.getElementById('historyDot').className = 'dot ' + info.dotClass;
+      document.getElementById('historyTitle').textContent = info.label + ' 기록';
+
+      // 버튼 색상
+      const btns = document.querySelectorAll('.btn-row .btn');
+      btns[0].className = 'btn ' + (currentPeriod === 'morning' ? 'btn-primary' :
+                                    currentPeriod === 'lunch' ? 'btn-lunch' : 'btn-evening');
+
+      // textarea placeholder
+      document.getElementById('entryText').placeholder =
+        '오늘의 ' + info.label.toLowerCase() + '을 돌아보며 기록해보세요...';
+
+      if (entries.length === 0) {
+        list.innerHTML = '<div class="empty-state">아직 ' + info.label + ' 기록이 없어요. 첫 기록을 남겨보세요!</div>';
+        return;
+      }
+      // 최신순
+      entries.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+      list.innerHTML = entries.map(e => {
+        const date = new Date(e.timestamp);
+        const dateStr = date.toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric' });
+        const timeStr = date.toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit' });
+        return '<div class="entry-item ' + info.entryClass + '">' +
+          '<button class="entry-delete" data-id="' + e.id + '" title="삭제">✕</button>' +
+          '<div class="entry-time">' + dateStr + ' ' + timeStr + '</div>' +
+          '<div class="entry-content">' + escapeHtml(e.content) + '</div>' +
+          '</div>';
+      }).join('');
+    }
+
+    function renderWeek() {
+      const list = document.getElementById('weekList');
+      const week = getWeekEntries();
+      if (week.length === 0) {
+        list.innerHTML = '<div class="empty-state">이번 주 기록이 없어요.</div>';
+        return;
+      }
+      week.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+      list.innerHTML = week.map(e => {
+        const date = new Date(e.timestamp);
+        const dateStr = date.toLocaleDateString('ko-KR', { weekday:'short', month:'short', day:'numeric' });
+        const info = PERIODS[e.period];
+        return '<div class="entry-item ' + info.entryClass + '" style="margin-bottom:6px;">' +
+          '<div class="entry-time">' + dateStr + ' · ' + info.label + '</div>' +
+          '<div class="entry-content" style="font-size:13px;">' + escapeHtml(e.content.substring(0, 80)) + (e.content.length > 80 ? '…' : '') + '</div>' +
+          '</div>';
+      }).join('');
+    }
+
+    function renderStats() {
+      const data = loadData();
+      const today = new Date().toDateString();
+      const counts = { morning: 0, lunch: 0, evening: 0 };
+      // 전체 기간 기준 (앱 사용 기간 전체)
+      data.entries.forEach(e => {
+        if (counts[e.period] !== undefined) counts[e.period]++;
+      });
+      document.getElementById('statMorning').textContent = counts.morning;
+      document.getElementById('statLunch').textContent = counts.lunch;
+      document.getElementById('statEvening').textContent = counts.evening;
+    }
+
+    // ---------- 액션 ----------
+    function saveEntry() {
+      const content = document.getElementById('entryText').value.trim();
+      if (!content) {
+        showToast('기록을 입력해주세요');
+        return;
+      }
+      const data = loadData();
+      data.entries.push({
+        id: Date.now().toString(36) + Math.random().toString(36).substring(2,6),
+        period: currentPeriod,
+        content: content,
+        timestamp: new Date().toISOString()
+      });
+      saveData(data);
+      document.getElementById('entryText').value = '';
+      renderHistory();
+      renderWeek();
+      renderStats();
+      showToast('저장됐어요 ✓');
+    }
+
+    function deleteEntry(id) {
+      const data = loadData();
+      data.entries = data.entries.filter(e => e.id !== id);
+      saveData(data);
+      renderHistory();
+      renderWeek();
+      renderStats();
+      showToast('삭제됐어요');
+    }
+
+    function clearTextarea() {
+      document.getElementById('entryText').value = '';
+    }
+
+    function switchPeriod(period) {
+      currentPeriod = period;
+      document.querySelectorAll('.time-tab').forEach(el => {
+        el.classList.remove('active-m', 'active-l', 'active-e');
+        if (el.dataset.period === period) {
+          el.classList.add('active-' + period[0]);
+        }
+      });
+      renderHistory();
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 1800);
+    }
+
+    // ---------- 이벤트 ----------
+    document.getElementById('timeTabs').addEventListener('click', e => {
+      const tab = e.target.closest('.time-tab');
+      if (!tab) return;
+      switchPeriod(tab.dataset.period);
+    });
+
+    document.getElementById('saveBtn').addEventListener('click', saveEntry);
+    document.getElementById('clearBtn').addEventListener('click', clearTextarea);
+
+    document.getElementById('historyList').addEventListener('click', e => {
+      const btn = e.target.closest('.entry-delete');
+      if (!btn) return;
+      deleteEntry(btn.dataset.id);
+    });
+
+    // 엔터키로도 저장 (Ctrl+Enter / 스퀘어)
+    document.getElementById('entryText').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        saveEntry();
+      }
+    });
+
+    // ---------- 초기화 ----------
+    renderHistory();
+    renderWeek();
+    renderStats();
+  </script>
+</body>
+</html>
