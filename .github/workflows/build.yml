@@ -34,7 +34,7 @@ jobs:
         env:
           KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
         run: |
-          echo "$KEYSTORE_B64" | base64 -d > www/release-keystore.jks
+          echo "$KEYSTORE_B64" | tr -d '\n' | base64 -d > www/release-keystore.jks
           ls -la www/release-keystore.jks
 
       - name: Bubblewrap CLI 전역 설치
