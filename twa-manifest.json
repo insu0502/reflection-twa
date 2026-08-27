@@ -20,7 +20,7 @@
       "type": "image/png"
     }
   ],
-  "digitallySign": true,
+  "digitallySign": false,
   "signingKey": {
     "path": "release-keystore.jks",
     "alias": "[REDACTED:SHARED_KEYSTORE_ALIAS]"
