@@ -1,0 +1,40 @@
+{
+  "packageId": "com.geniustart.reflection",
+  "host": "insu0502.github.io",
+  "name": "리플렉션",
+  "startUrl": "/reflection-twa/index.html",
+  "iconUrl": "https://insu0502.github.io/reflection-twa/icon-512.png",
+  "webManifestUrl": "https://insu0502.github.io/reflection-twa/manifest.json",
+  "launchUrl": "https://insu0502.github.io/reflection-twa/index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "themeColor": "#4A90D9",
+  "backgroundColor": "#ffffff",
+  "statusBarColor": "#4A90D9",
+  "navigationColor": "#0f172a",
+  "splashScreenFadeOutDuration": 300,
+  "icons": [
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "digitallySign": true,
+  "signingKey": {
+    "path": "release-keystore.jks",
+    "alias": "timer-key"
+  },
+  "enableNotifications": false,
+  "enablePlayBilling": false,
+  "customTabsRedirectEnabled": false,
+  "keepAssetBar": false,
+  "enableUrlBarHiding": true,
+  "enableOfflineSupport": false,
+  "minimumSdkVersion": 21,
+  "targetSdkVersion": 34,
+  "compileSdkVersion": 34,
+  "buildToolsVersion": "34.0.0",
+  "appVersionCode": 1,
+  "appVersion": "1.0.0"
+}
